@@ -1,21 +1,32 @@
-# All Terrain Development Website
+# Contractor Website Template
 
-Production-oriented Next.js website for an earthwork and landscaping business with:
+A production-oriented website template for contractors and service businesses that need to:
 
-- Branded modern/camo + equipment visual theme
-- Estimate request form with photo/video attachment uploads
-- Server-side validation, anti-spam controls, and rate limiting
-- Prisma-backed lead storage
-- First-visit admin setup + login protected admin dashboard
-- Batch estimate export/delete with forced CSV backups on deletes
+- showcase project work,
+- collect estimate requests with attachments,
+- manage testimonials and review controls,
+- and run a lightweight admin workflow without extra SaaS overhead.
 
-## Stack
+This project is a strong baseline for landscapers, excavators, concrete crews, roofers, painters, and similar field-service companies.
 
-- Next.js (App Router) + TypeScript + Tailwind CSS
-- Prisma ORM (`sqlite` default, easy to move to Postgres)
-- S3-compatible object storage using signed upload URLs
+## What You Get
 
-## Setup
+- Public marketing site with hero, services, trust section, and project portfolio
+- Estimate request form with optional image/video upload support
+- Testimonials pipeline with moderation controls
+- Secure admin area for lead management, project updates, and review settings
+- CSV export + backup-oriented deletion flow for estimates
+- Rate limiting + server-side validation on public submission APIs
+
+## Tech Stack
+
+- Next.js (App Router) + TypeScript
+- Tailwind CSS
+- Prisma ORM
+- SQLite by default (easy path to Postgres)
+- S3-compatible storage support via signed upload URLs (with local upload fallback)
+
+## Quick Start (Local Development)
 
 1. Install dependencies:
 
@@ -23,67 +34,94 @@ Production-oriented Next.js website for an earthwork and landscaping business wi
 npm install
 ```
 
-2. Copy env template and set values:
+2. Create your env file:
 
 ```bash
 cp .env.example .env
 ```
 
-3. Generate Prisma client and run migration:
+3. Generate Prisma client and apply migrations:
 
 ```bash
 npm run prisma:generate
-npm run prisma:migrate -- --name init
+npx prisma migrate deploy
 ```
 
-4. Run development server:
+4. Start the app:
 
 ```bash
 npm run dev
 ```
 
-## Admin Security
+5. Open:
 
-- Admin setup is first-visit only (`/admin/setup`).
-- Database enforces a single admin account (no duplicates can be created).
-- Admin session cookie is `HttpOnly`, `SameSite=Strict`, and `Secure` in production.
-- `AUTH_SECRET` is required in production.
+```text
+http://localhost:3000
+```
 
-## Core Routes
+## Admin + Lead Workflow
 
-- `/` public marketing + estimate form + portfolio
-- `/admin` authenticated dashboard of estimate requests
-- `/admin/setup` first-visit admin account creation
-- `/admin/login` admin sign-in
-- `POST /api/uploads/sign` signed object-upload URL generation
-- `POST /api/estimates` estimate submission endpoint
+- First-time setup is at `/admin/setup`
+- Ongoing login is at `/admin/login`
+- Dashboard is at `/admin`
+- Single-admin behavior is enforced at the database level
+- Session cookie is `HttpOnly` and uses strict same-site settings
+
+## API Surface (High Level)
+
+- `POST /api/estimates` — submit estimate request
+- `POST /api/uploads/sign` — issue signed upload URL for S3-compatible storage
+- `POST /api/uploads` — local upload fallback flow
+- `POST /api/testimonials` — submit testimonials
+- `POST /api/admin/*` — authenticated admin operations
 
 ## Docker (Self-Hosted)
 
-1. Create Docker env file:
+1. Prepare Docker env:
 
 ```bash
 cp .env.docker.example .env.docker
 ```
 
-2. Set a strong `AUTH_SECRET` and your storage/database values in `.env.docker`.
+2. Set required values in `.env.docker` (especially `AUTH_SECRET` and storage/database vars).
 
-3. Build and run:
+3. Build + run:
 
 ```bash
 docker compose up -d --build
 ```
 
-4. Access app on high default localhost port:
+4. Open:
 
-- `http://localhost:43871`
+```text
+http://localhost:43871
+```
 
-You can override with `APP_PORT` in `.env.docker`.
+Set `APP_PORT` in `.env.docker` to change the host port.
 
-## Production Notes
+## Environment Notes
 
-- Set a strong `AUTH_SECRET` (required).
-- Use private bucket + CDN/public read strategy suitable to your platform.
-- If S3 env values are placeholders, uploads automatically save to local `public/uploads` for dev.
-- Replace in-memory rate limiter with Redis/Upstash for multi-instance deployments.
-- Migrate `DATABASE_URL` to managed Postgres in production.
+- In production, set a strong `AUTH_SECRET`
+- If S3 variables are omitted, uploads can fall back to local `public/uploads`
+- For multi-instance deployments, replace in-memory rate limiting with Redis/Upstash
+- For production DB reliability, migrate from SQLite to managed Postgres
+
+## Template Customization Checklist
+
+When adapting this starter to a new contractor brand:
+
+- Update company name, service list, and service area copy
+- Replace project photos/videos and testimonial content
+- Update contact info, social links, and legal footer details
+- Tune estimate form fields to match your quoting process
+- Configure your preferred object storage and production database
+
+## Recommended Git Hygiene
+
+This repo is configured to ignore local runtime artifacts such as:
+
+- `.env*` files
+- local SQLite files (`prisma/*.db`)
+- local uploaded media (`public/uploads/*`, except `.gitkeep`)
+
+This keeps secrets and machine-specific files out of source control.

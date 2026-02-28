@@ -33,6 +33,15 @@ yarn-error.log*
 # env files (can opt-in for committing if needed)
 .env*
 
+# local runtime data
+/prisma/dev.db
+/prisma/*.db
+/prisma/*.db-journal
+
+# local uploaded assets (keep directory only)
+/public/uploads/*
+!/public/uploads/.gitkeep
+
 # vercel
 .vercel
 
