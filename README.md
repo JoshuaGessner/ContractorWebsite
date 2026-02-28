@@ -16,6 +16,125 @@ This template is designed to be deployed with Docker Compose first.
 - Primary install/deploy path: Docker Compose (recommended for staging/production)
 - Secondary path: Local Node.js runtime (for code changes and development only)
 
+## Start-to-Finish Docker Deploy (Recommended)
+
+If you just want to get the server running, follow these exact steps.
+
+### 1) Install prerequisites
+
+- Install Docker Desktop (includes Docker Compose)
+- Make sure Docker is running
+
+### 2) Clone the project
+
+```bash
+git clone https://github.com/JoshuaGessner/ContractorWebsite.git
+cd ContractorWebsite/site
+```
+
+### 3) Create Docker environment file
+
+```bash
+cp .env.docker.example .env.docker
+```
+
+### 4) Edit `.env.docker`
+
+At minimum, set these:
+
+- `DATABASE_URL` (leave default to start with SQLite volume)
+
+`AUTH_SECRET` options:
+
+- Recommended: set `AUTH_SECRET` yourself in `.env.docker`
+- If omitted, the Docker container now auto-generates one on first start and stores it at `/app/data/auth_secret` (persistent Docker volume)
+- On next container restarts, that same saved secret is reused automatically
+
+Optional (only if using S3-compatible storage):
+
+- `S3_REGION`
+- `S3_BUCKET`
+- `S3_ACCESS_KEY_ID`
+- `S3_SECRET_ACCESS_KEY`
+- `S3_ENDPOINT`
+- `S3_PUBLIC_BASE_URL`
+
+### AUTH_SECRET explained (simple)
+
+`AUTH_SECRET` is the key used to sign admin session cookies.
+
+- Think of it as the password the server uses to prove “this login cookie is real”
+- If this value changes, existing admin sessions are invalidated (users must log in again)
+- It should be long, random, and kept private
+
+Easy ways to generate one manually:
+
+Using OpenSSL:
+
+```bash
+openssl rand -base64 48
+```
+
+Using Node.js:
+
+```bash
+node -e "console.log(require('crypto').randomBytes(48).toString('base64url'))"
+```
+
+Then place it in `.env.docker`:
+
+```bash
+AUTH_SECRET=your_generated_value_here
+```
+
+If you do nothing, Docker will auto-generate and persist one for you (no extra infrastructure needed).
+
+### 5) Build and start the server
+
+```bash
+docker compose up -d --build
+```
+
+### 6) Open the app
+
+```text
+http://localhost:43871
+```
+
+### 7) First admin setup
+
+- Open `/admin/setup` in your browser
+- Create your first admin account
+- After setup, use `/admin/login` to access admin
+
+### 8) Useful Docker commands
+
+View logs:
+
+```bash
+docker compose logs -f app
+```
+
+Check running containers:
+
+```bash
+docker compose ps
+```
+
+Stop server:
+
+```bash
+docker compose down
+```
+
+Rebuild after changes:
+
+```bash
+docker compose up -d --build
+```
+
+Change host port by setting `APP_PORT` in `.env.docker` (default is `43871`).
+
 ## What You Get
 
 - Public marketing site with hero, services, trust section, and project portfolio
@@ -32,46 +151,6 @@ This template is designed to be deployed with Docker Compose first.
 - Prisma ORM
 - SQLite by default (easy path to Postgres)
 - S3-compatible storage support via signed upload URLs (with local upload fallback)
-
-## Quick Start (Primary: Docker Compose)
-
-1. Create Docker environment file:
-
-```bash
-cp .env.docker.example .env.docker
-```
-
-2. Set required values in `.env.docker`:
-
-- `AUTH_SECRET` (required, use a long random value)
-- `DATABASE_URL` (default SQLite volume is fine to start)
-- S3 settings if using object storage (`S3_*` + `S3_PUBLIC_BASE_URL`)
-
-3. Build and start:
-
-```bash
-docker compose up -d --build
-```
-
-4. Open the app:
-
-```text
-http://localhost:43871
-```
-
-5. Check logs if needed:
-
-```bash
-docker compose logs -f app
-```
-
-6. Stop services:
-
-```bash
-docker compose down
-```
-
-Set `APP_PORT` in `.env.docker` to change the host port.
 
 ## Local Development (Secondary)
 
@@ -136,7 +215,7 @@ docker compose exec app npx prisma migrate deploy
 
 ## Environment Notes
 
-- In production, set a strong `AUTH_SECRET`
+- In production, use a strong `AUTH_SECRET` (or let Docker auto-generate and persist it to `/app/data/auth_secret`)
 - If S3 variables are omitted, uploads can fall back to local `public/uploads`
 - For multi-instance deployments, replace in-memory rate limiting with Redis/Upstash
 - For production DB reliability, migrate from SQLite to managed Postgres
