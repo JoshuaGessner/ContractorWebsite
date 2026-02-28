@@ -96,7 +96,7 @@ export function AdminPortfolioManager({ initialProjects }: Props) {
     const formData = new FormData();
     formData.append("file", fileToUpload);
 
-    const uploadResponse = await fetch("/api/uploads", {
+    const uploadResponse = await fetch("/api/uploads?scope=portfolio", {
       method: "POST",
       body: formData,
     });

@@ -344,13 +344,13 @@ export function AdminEstimatesManager({ initialEstimates, adminUsername }: Props
                         <div className="flex gap-2">
                           {estimate.mediaAssets.slice(0, 2).map((media) => (
                             <div key={media.id} className="h-12 w-16 overflow-hidden rounded border border-white/10 bg-zinc-900">
-                              {media.publicUrl && isImageType(media.mimeType) ? (
+                              {isImageType(media.mimeType) ? (
                                 <div
                                   className="h-full w-full bg-cover bg-center"
-                                  style={{ backgroundImage: `url(${media.publicUrl})` }}
+                                  style={{ backgroundImage: `url(/api/admin/media/${media.id})` }}
                                   aria-label="Attachment thumbnail"
                                 />
-                              ) : media.publicUrl && isVideoType(media.mimeType) ? (
+                              ) : isVideoType(media.mimeType) ? (
                                 <div className="flex h-full w-full items-center justify-center text-[10px] text-zinc-300">
                                   VIDEO
                                 </div>
@@ -455,24 +455,24 @@ export function AdminEstimatesManager({ initialEstimates, adminUsername }: Props
                 <div className="grid gap-3 sm:grid-cols-2">
                   {activeEstimate.mediaAssets.map((media) => (
                     <article key={media.id} className="rounded-md border border-white/10 bg-zinc-900/60 p-3">
-                      {media.publicUrl ? (
-                        isImageType(media.mimeType) ? (
-                          <a href={media.publicUrl} target="_blank" rel="noreferrer" className="block">
-                            <div
-                              className="mb-2 h-40 w-full rounded bg-cover bg-center"
-                              style={{ backgroundImage: `url(${media.publicUrl})` }}
-                              aria-label="Attachment preview"
-                            />
-                          </a>
-                        ) : isVideoType(media.mimeType) ? (
-                          <video controls className="mb-2 h-40 w-full rounded bg-black" preload="metadata">
-                            <source src={media.publicUrl} type={media.mimeType} />
-                          </video>
-                        ) : (
-                          <div className="mb-2 flex h-40 w-full items-center justify-center rounded bg-zinc-800 text-xs text-zinc-300">
-                            Preview not available
-                          </div>
-                        )
+                      {isImageType(media.mimeType) ? (
+                        <a href={`/api/admin/media/${media.id}`} target="_blank" rel="noreferrer" className="block">
+                          <div
+                            className="mb-2 h-40 w-full rounded bg-cover bg-center"
+                            style={{ backgroundImage: `url(/api/admin/media/${media.id})` }}
+                            aria-label="Attachment preview"
+                          />
+                        </a>
+                      ) : isVideoType(media.mimeType) ? (
+                        <video controls className="mb-2 h-40 w-full rounded bg-black" preload="metadata">
+                          <source src={`/api/admin/media/${media.id}`} type={media.mimeType} />
+                        </video>
+                      ) : null}
+
+                      {!isImageType(media.mimeType) && !isVideoType(media.mimeType) ? (
+                        <div className="mb-2 flex h-40 w-full items-center justify-center rounded bg-zinc-800 text-xs text-zinc-300">
+                          Preview not available
+                        </div>
                       ) : null}
 
                       <p className="truncate text-xs text-zinc-300" title={media.storageKey}>
@@ -482,25 +482,22 @@ export function AdminEstimatesManager({ initialEstimates, adminUsername }: Props
                         {media.mimeType} · {formatBytes(media.fileSize)}
                       </p>
 
-                      {media.publicUrl ? (
-                        <div className="mt-2 flex gap-2">
-                          <a
-                            className="rounded border border-yellow-400/40 px-2 py-1 text-xs text-yellow-300"
-                            href={media.publicUrl}
-                            target="_blank"
-                            rel="noreferrer"
-                          >
-                            Open
-                          </a>
-                          <a
-                            className="rounded border border-white/20 px-2 py-1 text-xs text-zinc-200"
-                            href={media.publicUrl}
-                            download
-                          >
-                            Download
-                          </a>
-                        </div>
-                      ) : null}
+                      <div className="mt-2 flex gap-2">
+                        <a
+                          className="rounded border border-yellow-400/40 px-2 py-1 text-xs text-yellow-300"
+                          href={`/api/admin/media/${media.id}`}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          Open
+                        </a>
+                        <a
+                          className="rounded border border-white/20 px-2 py-1 text-xs text-zinc-200"
+                          href={`/api/admin/media/${media.id}?download=1`}
+                        >
+                          Download
+                        </a>
+                      </div>
                     </article>
                   ))}
                 </div>

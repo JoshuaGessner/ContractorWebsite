@@ -47,17 +47,17 @@ export function EstimateForm() {
       const formData = new FormData();
       formData.append("file", file);
 
-      const uploadResponse = await fetch("/api/uploads", {
+      const scopedUploadResponse = await fetch("/api/uploads?scope=estimate", {
         method: "POST",
         body: formData,
       });
 
-      if (!uploadResponse.ok) {
-        const errorBody = await uploadResponse.json().catch(() => ({ message: "Upload failed." }));
+      if (!scopedUploadResponse.ok) {
+        const errorBody = await scopedUploadResponse.json().catch(() => ({ message: "Upload failed." }));
         throw new Error(errorBody.message ?? "Upload failed.");
       }
 
-      const uploadedFile = (await uploadResponse.json()) as {
+      const uploadedFile = (await scopedUploadResponse.json()) as {
         storageKey: string;
         publicUrl: string | null;
         mimeType: string;

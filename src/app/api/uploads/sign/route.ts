@@ -2,6 +2,7 @@ import { randomUUID } from "crypto";
 import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { NextRequest, NextResponse } from "next/server";
+import { getAuthenticatedAdmin } from "@/lib/admin-auth";
 import { getServerEnv } from "@/lib/env";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { signUploadSchema } from "@/lib/validation";
@@ -28,6 +29,17 @@ function cleanFileName(fileName: string) {
 }
 
 export async function POST(request: NextRequest) {
+  const scopeParam = request.nextUrl.searchParams.get("scope");
+  const scope = scopeParam === "portfolio" ? "portfolio" : "estimate";
+
+  if (scope === "portfolio") {
+    const admin = await getAuthenticatedAdmin();
+
+    if (!admin) {
+      return NextResponse.json({ message: "Unauthorized." }, { status: 401 });
+    }
+  }
+
   const env = getServerEnv();
 
   const s3 = new S3Client({
@@ -42,7 +54,7 @@ export async function POST(request: NextRequest) {
 
   const forwarded = request.headers.get("x-forwarded-for") ?? "unknown";
   const ip = forwarded.split(",")[0]?.trim() || "unknown";
-  const rate = checkRateLimit(`upload:${ip}`, 30, 10 * 60 * 1000);
+  const rate = checkRateLimit(`upload-sign:${scope}:${ip}`, 30, 10 * 60 * 1000);
 
   if (!rate.allowed) {
     return NextResponse.json({ message: "Too many upload requests. Try again soon." }, { status: 429 });
@@ -72,7 +84,8 @@ export async function POST(request: NextRequest) {
   }
 
   const safeName = cleanFileName(fileName);
-  const key = `estimate-uploads/${new Date().getFullYear()}/${randomUUID()}-${safeName}`;
+  const keyPrefix = scope === "portfolio" ? "portfolio-public" : "estimate-private";
+  const key = `${keyPrefix}/${new Date().getFullYear()}/${randomUUID()}-${safeName}`;
 
   const command = new PutObjectCommand({
     Bucket: env.S3_BUCKET,
@@ -81,7 +94,7 @@ export async function POST(request: NextRequest) {
   });
 
   const uploadUrl = await getSignedUrl(s3, command, { expiresIn: 60 * 5 });
-  const publicUrl = env.S3_PUBLIC_BASE_URL ? `${env.S3_PUBLIC_BASE_URL}/${key}` : null;
+  const publicUrl = scope === "portfolio" && env.S3_PUBLIC_BASE_URL ? `${env.S3_PUBLIC_BASE_URL}/${key}` : null;
 
   return NextResponse.json({
     uploadUrl,

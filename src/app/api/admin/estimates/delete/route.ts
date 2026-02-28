@@ -1,10 +1,9 @@
-import { readFile } from "fs/promises";
-import path from "path";
 import JSZip from "jszip";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { getAuthenticatedAdmin } from "@/lib/admin-auth";
 import { estimatesToCsv } from "@/lib/estimates-csv";
+import { readStoredMediaBuffer } from "@/lib/media-storage";
 import { prisma } from "@/lib/prisma";
 
 export const runtime = "nodejs";
@@ -29,29 +28,7 @@ function extensionFromMimeType(mimeType: string) {
 }
 
 async function resolveMediaBuffer(storageKey: string, publicUrl: string | null) {
-  if (storageKey.startsWith("local/")) {
-    const localFileName = storageKey.slice("local/".length);
-    const localFilePath = path.join(process.cwd(), "public", "uploads", localFileName);
-    return readFile(localFilePath);
-  }
-
-  if (publicUrl?.startsWith("/uploads/")) {
-    const localFileName = publicUrl.slice("/uploads/".length);
-    const localFilePath = path.join(process.cwd(), "public", "uploads", localFileName);
-    return readFile(localFilePath);
-  }
-
-  if (publicUrl?.startsWith("http://") || publicUrl?.startsWith("https://")) {
-    const response = await fetch(publicUrl);
-
-    if (!response.ok) {
-      throw new Error(`Remote media fetch failed (${response.status}).`);
-    }
-
-    return Buffer.from(await response.arrayBuffer());
-  }
-
-  throw new Error("Unsupported media location.");
+  return readStoredMediaBuffer({ storageKey, publicUrl });
 }
 
 export async function POST(request: NextRequest) {

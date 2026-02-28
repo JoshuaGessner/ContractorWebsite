@@ -42,6 +42,9 @@ yarn-error.log*
 /public/uploads/*
 !/public/uploads/.gitkeep
 
+# private local upload storage for estimate attachments
+/private/uploads/*
+
 # vercel
 .vercel
 

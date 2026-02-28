@@ -1,7 +1,12 @@
+import { Prisma } from "@prisma/client";
 import { EstimateForm } from "@/components/estimate-form";
 import { ProjectShareButtons } from "@/components/project-share-buttons";
 import { TestimonialForm } from "@/components/testimonial-form";
 import { prisma } from "@/lib/prisma";
+
+type PortfolioProjectWithMedia = Prisma.PortfolioProjectGetPayload<{
+  include: { mediaAssets: true };
+}>;
 
 export default function Home() {
   const projectsPromise = prisma.portfolioProject.findMany({
@@ -39,7 +44,7 @@ async function HomeView({
   testimonialsPromise,
   reviewSettingsPromise,
 }: {
-  projectsPromise: ReturnType<typeof prisma.portfolioProject.findMany>;
+  projectsPromise: Promise<PortfolioProjectWithMedia[]>;
   testimonialsPromise: ReturnType<typeof prisma.testimonial.findMany>;
   reviewSettingsPromise: ReturnType<typeof prisma.siteSetting.findUnique>;
 }) {
