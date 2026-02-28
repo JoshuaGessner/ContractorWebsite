@@ -9,6 +9,13 @@ A production-oriented website template for contractors and service businesses th
 
 This project is a strong baseline for landscapers, excavators, concrete crews, roofers, painters, and similar field-service companies.
 
+## Deployment Model (Docker First)
+
+This template is designed to be deployed with Docker Compose first.
+
+- Primary install/deploy path: Docker Compose (recommended for staging/production)
+- Secondary path: Local Node.js runtime (for code changes and development only)
+
 ## What You Get
 
 - Public marketing site with hero, services, trust section, and project portfolio
@@ -26,7 +33,49 @@ This project is a strong baseline for landscapers, excavators, concrete crews, r
 - SQLite by default (easy path to Postgres)
 - S3-compatible storage support via signed upload URLs (with local upload fallback)
 
-## Quick Start (Local Development)
+## Quick Start (Primary: Docker Compose)
+
+1. Create Docker environment file:
+
+```bash
+cp .env.docker.example .env.docker
+```
+
+2. Set required values in `.env.docker`:
+
+- `AUTH_SECRET` (required, use a long random value)
+- `DATABASE_URL` (default SQLite volume is fine to start)
+- S3 settings if using object storage (`S3_*` + `S3_PUBLIC_BASE_URL`)
+
+3. Build and start:
+
+```bash
+docker compose up -d --build
+```
+
+4. Open the app:
+
+```text
+http://localhost:43871
+```
+
+5. Check logs if needed:
+
+```bash
+docker compose logs -f app
+```
+
+6. Stop services:
+
+```bash
+docker compose down
+```
+
+Set `APP_PORT` in `.env.docker` to change the host port.
+
+## Local Development (Secondary)
+
+Use this mode when actively editing code.
 
 1. Install dependencies:
 
@@ -59,6 +108,16 @@ npm run dev
 http://localhost:3000
 ```
 
+## Docker Operations
+
+- Rebuild after dependency/code changes: `docker compose up -d --build`
+- View container status: `docker compose ps`
+- Run Prisma migration manually in container:
+
+```bash
+docker compose exec app npx prisma migrate deploy
+```
+
 ## Admin + Lead Workflow
 
 - First-time setup is at `/admin/setup`
@@ -74,30 +133,6 @@ http://localhost:3000
 - `POST /api/uploads` — local upload fallback flow
 - `POST /api/testimonials` — submit testimonials
 - `POST /api/admin/*` — authenticated admin operations
-
-## Docker (Self-Hosted)
-
-1. Prepare Docker env:
-
-```bash
-cp .env.docker.example .env.docker
-```
-
-2. Set required values in `.env.docker` (especially `AUTH_SECRET` and storage/database vars).
-
-3. Build + run:
-
-```bash
-docker compose up -d --build
-```
-
-4. Open:
-
-```text
-http://localhost:43871
-```
-
-Set `APP_PORT` in `.env.docker` to change the host port.
 
 ## Environment Notes
 
