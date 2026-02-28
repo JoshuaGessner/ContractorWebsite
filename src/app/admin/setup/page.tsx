@@ -2,6 +2,8 @@ import { getAdminCount, getAuthenticatedAdmin } from "@/lib/admin-auth";
 import { redirect } from "next/navigation";
 import { AdminSetupForm } from "@/components/admin-setup-form";
 
+export const dynamic = "force-dynamic";
+
 export default async function AdminSetupPage() {
   const adminCount = await getAdminCount();
 

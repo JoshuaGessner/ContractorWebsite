@@ -4,6 +4,8 @@ import { ProjectShareButtons } from "@/components/project-share-buttons";
 import { TestimonialForm } from "@/components/testimonial-form";
 import { prisma } from "@/lib/prisma";
 
+export const dynamic = "force-dynamic";
+
 type PortfolioProjectWithMedia = Prisma.PortfolioProjectGetPayload<{
   include: { mediaAssets: true };
 }>;
