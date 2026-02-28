@@ -1,0 +1,21 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: all-terrain-development-app
+    restart: unless-stopped
+    env_file:
+      - .env.docker
+    environment:
+      DATABASE_URL: ${DATABASE_URL:-file:/app/data/prod.db}
+      PORT: 3000
+    ports:
+      - "127.0.0.1:${APP_PORT:-43871}:3000"
+    volumes:
+      - atd_data:/app/data
+      - atd_uploads:/app/public/uploads
+
+volumes:
+  atd_data:
+  atd_uploads:

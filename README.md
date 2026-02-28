@@ -1,36 +1,89 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# All Terrain Development Website
 
-## Getting Started
+Production-oriented Next.js website for an earthwork and landscaping business with:
 
-First, run the development server:
+- Branded modern/camo + equipment visual theme
+- Estimate request form with photo/video attachment uploads
+- Server-side validation, anti-spam controls, and rate limiting
+- Prisma-backed lead storage
+- First-visit admin setup + login protected admin dashboard
+- Batch estimate export/delete with forced CSV backups on deletes
+
+## Stack
+
+- Next.js (App Router) + TypeScript + Tailwind CSS
+- Prisma ORM (`sqlite` default, easy to move to Postgres)
+- S3-compatible object storage using signed upload URLs
+
+## Setup
+
+1. Install dependencies:
+
+```bash
+npm install
+```
+
+2. Copy env template and set values:
+
+```bash
+cp .env.example .env
+```
+
+3. Generate Prisma client and run migration:
+
+```bash
+npm run prisma:generate
+npm run prisma:migrate -- --name init
+```
+
+4. Run development server:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Admin Security
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- Admin setup is first-visit only (`/admin/setup`).
+- Database enforces a single admin account (no duplicates can be created).
+- Admin session cookie is `HttpOnly`, `SameSite=Strict`, and `Secure` in production.
+- `AUTH_SECRET` is required in production.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Core Routes
 
-## Learn More
+- `/` public marketing + estimate form + portfolio
+- `/admin` authenticated dashboard of estimate requests
+- `/admin/setup` first-visit admin account creation
+- `/admin/login` admin sign-in
+- `POST /api/uploads/sign` signed object-upload URL generation
+- `POST /api/estimates` estimate submission endpoint
 
-To learn more about Next.js, take a look at the following resources:
+## Docker (Self-Hosted)
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+1. Create Docker env file:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```bash
+cp .env.docker.example .env.docker
+```
 
-## Deploy on Vercel
+2. Set a strong `AUTH_SECRET` and your storage/database values in `.env.docker`.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+3. Build and run:
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```bash
+docker compose up -d --build
+```
+
+4. Access app on high default localhost port:
+
+- `http://localhost:43871`
+
+You can override with `APP_PORT` in `.env.docker`.
+
+## Production Notes
+
+- Set a strong `AUTH_SECRET` (required).
+- Use private bucket + CDN/public read strategy suitable to your platform.
+- If S3 env values are placeholders, uploads automatically save to local `public/uploads` for dev.
+- Replace in-memory rate limiter with Redis/Upstash for multi-instance deployments.
+- Migrate `DATABASE_URL` to managed Postgres in production.

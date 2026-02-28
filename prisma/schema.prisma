@@ -1,0 +1,77 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model EstimateRequest {
+  id                   String       @id @default(cuid())
+  fullName             String
+  email                String
+  phoneNumber          String
+  projectDescription   String
+  preferredTimeline    String?
+  preferredContactTime String?
+  consent              Boolean
+  ipAddress            String?
+  status               String       @default("NEW")
+  createdAt            DateTime     @default(now())
+  mediaAssets          MediaAsset[]
+}
+
+model MediaAsset {
+  id                String          @id @default(cuid())
+  estimateRequestId String
+  storageKey        String
+  publicUrl         String?
+  mimeType          String
+  fileSize          Int
+  createdAt         DateTime        @default(now())
+  estimateRequest   EstimateRequest @relation(fields: [estimateRequestId], references: [id], onDelete: Cascade)
+}
+
+model AdminUser {
+  id           String   @id @default(cuid())
+  singletonKey Int      @unique @default(1)
+  username     String   @unique
+  passwordHash String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model PortfolioProject {
+  id          String   @id @default(cuid())
+  title       String
+  description String
+  mediaType   String
+  mediaUrl    String
+  storageKey  String
+  fileSize    Int
+  isPublished Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Testimonial {
+  id          String   @id @default(cuid())
+  fullName    String
+  location    String?
+  review      String
+  status      String   @default("PENDING")
+  isFeatured  Boolean  @default(false)
+  approvedAt  DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model SiteSetting {
+  id                      String   @id @default(cuid())
+  singletonKey            Int      @unique @default(1)
+  showReviewsSection      Boolean  @default(true)
+  showOnlyFeaturedReviews Boolean  @default(false)
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+}
