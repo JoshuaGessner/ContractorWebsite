@@ -32,25 +32,53 @@ git clone https://github.com/JoshuaGessner/ContractorWebsite.git
 cd ContractorWebsite/site
 ```
 
-### 3) Create Docker environment file
+### 3) One-command deploy (automatic env setup)
+
+Run this single command:
+
+```bash
+./scripts/deploy-docker.sh
+```
+
+What it does automatically:
+
+- Creates `.env.docker` if missing (from `.env.docker.example`)
+- Generates `AUTH_SECRET` if missing or still placeholder
+- Starts the app with `docker compose up -d --build`
+
+Alternative command (same behavior):
+
+```bash
+npm run deploy:docker
+```
+
+### 4) Open the app
+
+```text
+http://localhost:43871
+```
+
+### 5) First admin setup
+
+- Open `/admin/setup` in your browser
+- Create your first admin account
+- After setup, use `/admin/login` to access admin
+
+### 6) Optional manual env setup
+
+If you prefer managing env values yourself, do this before deploy:
 
 ```bash
 cp .env.docker.example .env.docker
 ```
 
-### 4) Edit `.env.docker`
+Then edit `.env.docker`.
 
-At minimum, set these:
+At minimum, set:
 
-- `DATABASE_URL` (leave default to start with SQLite volume)
+- `DATABASE_URL` (default is fine to start)
 
-`AUTH_SECRET` options:
-
-- Recommended: set `AUTH_SECRET` yourself in `.env.docker`
-- If omitted, the Docker container now auto-generates one on first start and stores it at `/app/data/auth_secret` (persistent Docker volume)
-- On next container restarts, that same saved secret is reused automatically
-
-Optional (only if using S3-compatible storage):
+Optional (if using S3-compatible storage):
 
 - `S3_REGION`
 - `S3_BUCKET`
@@ -59,55 +87,7 @@ Optional (only if using S3-compatible storage):
 - `S3_ENDPOINT`
 - `S3_PUBLIC_BASE_URL`
 
-### AUTH_SECRET explained (simple)
-
-`AUTH_SECRET` is the key used to sign admin session cookies.
-
-- Think of it as the password the server uses to prove “this login cookie is real”
-- If this value changes, existing admin sessions are invalidated (users must log in again)
-- It should be long, random, and kept private
-
-Easy ways to generate one manually:
-
-Using OpenSSL:
-
-```bash
-openssl rand -base64 48
-```
-
-Using Node.js:
-
-```bash
-node -e "console.log(require('crypto').randomBytes(48).toString('base64url'))"
-```
-
-Then place it in `.env.docker`:
-
-```bash
-AUTH_SECRET=your_generated_value_here
-```
-
-If you do nothing, Docker will auto-generate and persist one for you (no extra infrastructure needed).
-
-### 5) Build and start the server
-
-```bash
-docker compose up -d --build
-```
-
-### 6) Open the app
-
-```text
-http://localhost:43871
-```
-
-### 7) First admin setup
-
-- Open `/admin/setup` in your browser
-- Create your first admin account
-- After setup, use `/admin/login` to access admin
-
-### 8) Useful Docker commands
+### 7) Useful Docker commands
 
 View logs:
 
@@ -134,6 +114,38 @@ docker compose up -d --build
 ```
 
 Change host port by setting `APP_PORT` in `.env.docker` (default is `43871`).
+
+### AUTH_SECRET explained (simple)
+
+`AUTH_SECRET` is the key used to sign admin session cookies.
+
+- Think of it as the password the server uses to prove “this login cookie is real”
+- If this value changes, existing admin sessions are invalidated (users must log in again)
+- It should be long, random, and kept private
+
+For one-command deploy, it is auto-generated if missing.
+
+If you want to set it yourself, generate one with:
+
+Using OpenSSL:
+
+```bash
+openssl rand -base64 48
+```
+
+Using Node.js:
+
+```bash
+node -e "console.log(require('crypto').randomBytes(48).toString('base64url'))"
+```
+
+Then place it in `.env.docker`:
+
+```bash
+AUTH_SECRET=your_generated_value_here
+```
+
+If omitted, Docker startup also auto-generates and persists one to `/app/data/auth_secret`.
 
 ## What You Get
 
