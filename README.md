@@ -52,6 +52,18 @@ Alternative command (same behavior):
 npm run deploy:docker
 ```
 
+To update an already deployed server (pull latest + rebuild + restart):
+
+```bash
+./scripts/deploy-docker.sh --update
+```
+
+Or:
+
+```bash
+npm run deploy:update
+```
+
 ### 4) Open the app
 
 ```text
@@ -111,6 +123,12 @@ Rebuild after changes:
 
 ```bash
 docker compose up -d --build
+```
+
+Update current deployment from git + redeploy:
+
+```bash
+./scripts/deploy-docker.sh --update
 ```
 
 Change host port by setting `APP_PORT` in `.env.docker` (default is `43871`).

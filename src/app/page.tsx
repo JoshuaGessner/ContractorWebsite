@@ -109,7 +109,7 @@ async function HomeView({
   }
 
   return (
-    <main className="min-h-screen bg-[radial-gradient(circle_at_top_right,#485a39_0%,#11130f_45%,#060606_100%)] text-zinc-100">
+    <main className="min-h-screen bg-[radial-gradient(circle_at_top_right,#5a7045_0%,#1a2117_45%,#0f130f_100%)] text-zinc-100">
       <section className="mx-auto max-w-6xl px-6 pb-16 pt-10 sm:px-8 lg:px-10">
         <nav className="mb-12 flex items-center justify-between rounded-full border border-white/15 bg-black/40 px-5 py-3 backdrop-blur">
           <span className="text-lg font-bold tracking-wide text-yellow-300">ALL TERRAIN DEVELOPMENT</span>
@@ -122,7 +122,7 @@ async function HomeView({
         </nav>
 
         <div className="grid gap-8 lg:grid-cols-[1.05fr_0.95fr]">
-          <div className="rounded-3xl border border-white/10 bg-black/45 p-8 backdrop-blur">
+          <div className="rounded-3xl border border-white/15 bg-zinc-900/65 p-8 backdrop-blur">
             <p className="inline-block rounded-full border border-yellow-400/40 bg-yellow-400/15 px-3 py-1 text-xs font-medium uppercase tracking-wider text-yellow-300">
               Southern Tough. Modern Finish.
             </p>
@@ -135,14 +135,14 @@ async function HomeView({
             </p>
             <div className="mt-8 grid gap-4 sm:grid-cols-3">
               {["Licensed & Insured", "Residential + Commercial", "Detail-First Estimates"].map((item) => (
-                <div key={item} className="rounded-xl border border-white/10 bg-zinc-950/80 p-4 text-sm text-zinc-200">
+                <div key={item} className="rounded-xl border border-white/15 bg-zinc-900/75 p-4 text-sm text-zinc-200">
                   {item}
                 </div>
               ))}
             </div>
           </div>
 
-          <section id="estimate" className="rounded-3xl border border-yellow-500/30 bg-zinc-950/80 p-3">
+          <section id="estimate" className="rounded-3xl border border-yellow-500/35 bg-zinc-900/75 p-3">
             <EstimateForm />
           </section>
         </div>
@@ -157,7 +157,7 @@ async function HomeView({
         </div>
 
         {projectItems.length === 0 ? (
-          <div className="rounded-2xl border border-white/10 bg-black/45 p-6 text-sm text-zinc-300">
+          <div className="rounded-2xl border border-white/15 bg-zinc-900/65 p-6 text-sm text-zinc-300">
             Portfolio items will appear here after they are uploaded from the admin dashboard.
           </div>
         ) : null}
@@ -167,7 +167,7 @@ async function HomeView({
             {projectItems.map((project, index) => (
               <article
                 key={project.id}
-                className={`overflow-hidden rounded-2xl border border-white/10 bg-black/45 ${layoutForIndex(index)}`}
+                className={`overflow-hidden rounded-2xl border border-white/15 bg-zinc-900/65 ${layoutForIndex(index)}`}
               >
                 {project.primaryAsset.mediaType.startsWith("video/") ? (
                   <video controls className="h-56 w-full bg-black" preload="metadata">
@@ -223,7 +223,7 @@ async function HomeView({
 
       {showReviewsSection ? (
       <section className="mx-auto grid max-w-6xl gap-6 px-6 pb-20 sm:px-8 lg:grid-cols-[1.1fr_0.9fr] lg:px-10" id="testimonials">
-        <div className="rounded-2xl border border-white/10 bg-black/45 p-5">
+        <div className="rounded-2xl border border-white/15 bg-zinc-900/65 p-5">
           <h2 className="text-3xl font-bold text-white">Customer Reviews</h2>
           <p className="mt-2 text-zinc-300">Approved testimonials from past clients.</p>
 

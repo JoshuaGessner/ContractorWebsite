@@ -4,6 +4,12 @@ set -eu
 PROJECT_ROOT=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 cd "$PROJECT_ROOT"
 
+UPDATE_MODE=0
+
+if [ "${1:-}" = "--update" ]; then
+  UPDATE_MODE=1
+fi
+
 generate_secret() {
   if command -v openssl >/dev/null 2>&1; then
     openssl rand -base64 48 | tr -d '\n'
@@ -30,6 +36,28 @@ DATABASE_URL=file:/app/data/prod.db
 EOF
     echo "Created minimal .env.docker"
   fi
+fi
+
+if [ "$UPDATE_MODE" -eq 1 ]; then
+  if ! command -v git >/dev/null 2>&1; then
+    echo "Git is not installed. Cannot run update mode."
+    exit 1
+  fi
+
+  if [ ! -d .git ]; then
+    echo "No .git directory found. Update mode requires a git clone."
+    exit 1
+  fi
+
+  if [ -n "$(git status --porcelain 2>/dev/null || true)" ]; then
+    echo "Working tree is not clean. Commit/stash changes before using --update."
+    exit 1
+  fi
+
+  CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+  echo "Updating source from origin/${CURRENT_BRANCH}..."
+  git fetch origin
+  git pull --ff-only origin "$CURRENT_BRANCH"
 fi
 
 AUTH_LINE=$(grep '^AUTH_SECRET=' .env.docker || true)
@@ -60,7 +88,7 @@ if ! docker info >/dev/null 2>&1; then
   exit 1
 fi
 
-docker compose up -d --build
+docker compose up -d --build --pull always --remove-orphans
 
 APP_PORT_VALUE=$(grep '^APP_PORT=' .env.docker 2>/dev/null | tail -n 1 | cut -d'=' -f2- || true)
 if [ -z "$APP_PORT_VALUE" ]; then
@@ -68,3 +96,7 @@ if [ -z "$APP_PORT_VALUE" ]; then
 fi
 
 echo "Done. Open: http://localhost:${APP_PORT_VALUE}"
+
+if [ "$UPDATE_MODE" -eq 1 ]; then
+  echo "Update mode complete."
+fi
