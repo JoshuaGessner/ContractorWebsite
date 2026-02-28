@@ -29,7 +29,7 @@ If you just want to get the server running, follow these exact steps.
 
 ```bash
 git clone https://github.com/JoshuaGessner/ContractorWebsite.git
-cd ContractorWebsite/site
+cd ContractorWebsite
 ```
 
 ### 3) One-command deploy (automatic env setup)
@@ -69,6 +69,14 @@ npm run deploy:update
 ```text
 http://localhost:43871
 ```
+
+For domain/external access, ensure `.env.docker` has:
+
+```bash
+APP_HOST=0.0.0.0
+```
+
+Then confirm your firewall/security group allows inbound traffic to your `APP_PORT`.
 
 ### 5) First admin setup
 
@@ -132,6 +140,11 @@ Update current deployment from git + redeploy:
 ```
 
 Change host port by setting `APP_PORT` in `.env.docker` (default is `43871`).
+
+Control bind interface with `APP_HOST`:
+
+- `APP_HOST=0.0.0.0` allows domain/external traffic
+- `APP_HOST=127.0.0.1` restricts access to localhost only
 
 ### AUTH_SECRET explained (simple)
 

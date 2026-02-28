@@ -95,7 +95,16 @@ if [ -z "$APP_PORT_VALUE" ]; then
   APP_PORT_VALUE=43871
 fi
 
-echo "Done. Open: http://localhost:${APP_PORT_VALUE}"
+APP_HOST_VALUE=$(grep '^APP_HOST=' .env.docker 2>/dev/null | tail -n 1 | cut -d'=' -f2- || true)
+if [ -z "$APP_HOST_VALUE" ]; then
+  APP_HOST_VALUE=0.0.0.0
+fi
+
+echo "Done. Docker port bind: ${APP_HOST_VALUE}:${APP_PORT_VALUE} -> container:3000"
+echo "Local check: http://localhost:${APP_PORT_VALUE}"
+if [ "$APP_HOST_VALUE" = "0.0.0.0" ]; then
+  echo "External/domain access is enabled (verify DNS/firewall/reverse-proxy rules)."
+fi
 
 if [ "$UPDATE_MODE" -eq 1 ]; then
   echo "Update mode complete."
