@@ -14,6 +14,11 @@ export default async function AdminPage() {
   });
 
   const projects = await prisma.portfolioProject.findMany({
+    include: {
+      mediaAssets: {
+        orderBy: { sortOrder: "asc" },
+      },
+    },
     orderBy: { createdAt: "desc" },
     take: 200,
   });
@@ -35,6 +40,11 @@ export default async function AdminPage() {
   const initialProjects = projects.map((project) => ({
     ...project,
     createdAt: project.createdAt.toISOString(),
+    updatedAt: project.updatedAt.toISOString(),
+    mediaAssets: project.mediaAssets.map((asset) => ({
+      ...asset,
+      createdAt: asset.createdAt.toISOString(),
+    })),
   }));
 
   const initialTestimonials = testimonials.map((testimonial) => ({

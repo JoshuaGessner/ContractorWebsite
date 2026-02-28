@@ -34,6 +34,16 @@ type ProjectRow = {
   fileSize: number;
   isPublished: boolean;
   createdAt: string;
+  updatedAt: string;
+  mediaAssets: {
+    id: string;
+    mediaType: string;
+    mediaUrl: string;
+    storageKey: string;
+    fileSize: number;
+    sortOrder: number;
+    createdAt: string;
+  }[];
 };
 
 type Props = {

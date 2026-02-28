@@ -6,6 +6,11 @@ import { prisma } from "@/lib/prisma";
 export default function Home() {
   const projectsPromise = prisma.portfolioProject.findMany({
     where: { isPublished: true },
+    include: {
+      mediaAssets: {
+        orderBy: { sortOrder: "asc" },
+      },
+    },
     orderBy: { createdAt: "desc" },
     take: 12,
   });
@@ -50,23 +55,51 @@ async function HomeView({
     ? testimonials.filter((testimonial) => testimonial.isFeatured)
     : testimonials;
 
-  const photoProjects = projects.filter((project) => project.mediaType.startsWith("image/"));
-  const videoProjects = projects.filter((project) => project.mediaType.startsWith("video/"));
+  const projectItems = projects
+    .map((project) => {
+      const mediaAssets = project.mediaAssets.length
+        ? project.mediaAssets
+        : [
+            {
+              id: `${project.id}-fallback`,
+              mediaType: project.mediaType,
+              mediaUrl: project.mediaUrl,
+              storageKey: project.storageKey,
+              fileSize: project.fileSize,
+              sortOrder: 0,
+              createdAt: project.createdAt,
+              projectId: project.id,
+            },
+          ];
 
-  const photoItems = photoProjects.map((project) => ({
-    id: project.id,
-    title: project.title,
-    description: project.description,
-    imageUrl: project.mediaUrl,
-  }));
+      const primaryAsset = mediaAssets[0];
 
-  const videoItems = videoProjects.map((project) => ({
-    id: project.id,
-    title: project.title,
-    description: project.description,
-    videoUrl: project.mediaUrl,
-    videoType: project.mediaType,
-  }));
+      if (!primaryAsset) {
+        return null;
+      }
+
+      return {
+        id: project.id,
+        title: project.title,
+        description: project.description,
+        mediaAssets,
+        primaryAsset,
+      };
+    })
+    .filter((item): item is NonNullable<typeof item> => item !== null);
+
+  function layoutForIndex(index: number) {
+    const pattern = [
+      "md:col-span-2",
+      "md:col-span-1",
+      "md:col-span-1",
+      "md:col-span-2",
+      "md:col-span-1",
+      "md:col-span-1",
+    ];
+
+    return pattern[index % pattern.length] ?? "md:col-span-1";
+  }
 
   return (
     <main className="min-h-screen bg-[radial-gradient(circle_at_top_right,#485a39_0%,#11130f_45%,#060606_100%)] text-zinc-100">
@@ -116,44 +149,64 @@ async function HomeView({
           </div>
         </div>
 
-        {photoItems.length === 0 && videoItems.length === 0 ? (
+        {projectItems.length === 0 ? (
           <div className="rounded-2xl border border-white/10 bg-black/45 p-6 text-sm text-zinc-300">
             Portfolio items will appear here after they are uploaded from the admin dashboard.
           </div>
         ) : null}
 
-        {photoItems.length > 0 ? (
+        {projectItems.length > 0 ? (
           <div className="grid gap-5 md:grid-cols-3">
-            {photoItems.map((project) => (
-              <article key={project.id} className="overflow-hidden rounded-2xl border border-white/10 bg-black/45">
-                <div className="h-52 w-full bg-zinc-900">
-                  <div
-                    className="h-full w-full bg-cover bg-center"
-                    style={{ backgroundImage: `url(${project.imageUrl})` }}
-                    aria-label={project.title}
-                  />
-                </div>
-                <div className="p-4">
-                  <h3 className="font-semibold text-white">{project.title}</h3>
-                  <p className="mt-2 text-sm text-zinc-300">{project.description}</p>
-                  <ProjectShareButtons projectTitle={project.title} mediaUrl={project.imageUrl} />
-                </div>
-              </article>
-            ))}
-          </div>
-        ) : null}
+            {projectItems.map((project, index) => (
+              <article
+                key={project.id}
+                className={`overflow-hidden rounded-2xl border border-white/10 bg-black/45 ${layoutForIndex(index)}`}
+              >
+                {project.primaryAsset.mediaType.startsWith("video/") ? (
+                  <video controls className="h-56 w-full bg-black" preload="metadata">
+                    <source src={project.primaryAsset.mediaUrl} type={project.primaryAsset.mediaType} />
+                  </video>
+                ) : (
+                  <div className="h-56 w-full bg-zinc-900">
+                    <div
+                      className="h-full w-full bg-cover bg-center"
+                      style={{ backgroundImage: `url(${project.primaryAsset.mediaUrl})` }}
+                      aria-label={project.title}
+                    />
+                  </div>
+                )}
 
-        {videoItems.length > 0 ? (
-          <div className="mt-8 grid gap-5 md:grid-cols-2">
-            {videoItems.map((project) => (
-              <article key={project.id} className="overflow-hidden rounded-2xl border border-white/10 bg-black/45">
-                <video controls className="h-64 w-full bg-black" preload="metadata">
-                  <source src={project.videoUrl} type={project.videoType} />
-                </video>
                 <div className="p-4">
-                  <h3 className="font-semibold text-white">{project.title}</h3>
+                  <div className="flex items-center justify-between gap-3">
+                    <h3 className="font-semibold text-white">{project.title}</h3>
+                    <span className="rounded-full border border-white/20 px-2 py-1 text-[10px] uppercase tracking-wide text-zinc-300">
+                      {project.mediaAssets.length} file{project.mediaAssets.length === 1 ? "" : "s"}
+                    </span>
+                  </div>
                   <p className="mt-2 text-sm text-zinc-300">{project.description}</p>
-                  <ProjectShareButtons projectTitle={project.title} mediaUrl={project.videoUrl} />
+
+                  {project.mediaAssets.length > 1 ? (
+                    <div className="mt-3 grid grid-cols-4 gap-2">
+                      {project.mediaAssets.slice(1, 5).map((asset) =>
+                        asset.mediaType.startsWith("video/") ? (
+                          <div
+                            key={asset.id}
+                            className="flex h-12 items-center justify-center rounded bg-zinc-900 text-[10px] text-zinc-300"
+                          >
+                            Video
+                          </div>
+                        ) : (
+                          <div
+                            key={asset.id}
+                            className="h-12 rounded bg-cover bg-center"
+                            style={{ backgroundImage: `url(${asset.mediaUrl})` }}
+                          />
+                        ),
+                      )}
+                    </div>
+                  ) : null}
+
+                  <ProjectShareButtons projectTitle={project.title} mediaUrl={project.primaryAsset.mediaUrl} />
                 </div>
               </article>
             ))}

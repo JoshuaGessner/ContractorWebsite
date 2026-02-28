@@ -53,6 +53,21 @@ model PortfolioProject {
   isPublished Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+  mediaAssets PortfolioProjectMedia[]
+}
+
+model PortfolioProjectMedia {
+  id          String           @id @default(cuid())
+  projectId   String
+  mediaType   String
+  mediaUrl    String
+  storageKey  String
+  fileSize    Int
+  sortOrder   Int              @default(0)
+  createdAt   DateTime         @default(now())
+  project     PortfolioProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
 }
 
 model Testimonial {

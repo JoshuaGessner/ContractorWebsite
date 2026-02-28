@@ -3,13 +3,17 @@ import { z } from "zod";
 import { getAuthenticatedAdmin } from "@/lib/admin-auth";
 import { prisma } from "@/lib/prisma";
 
-const createProjectSchema = z.object({
-  title: z.string().trim().min(2).max(120),
-  description: z.string().trim().min(10).max(4000),
+const projectMediaSchema = z.object({
   mediaType: z.string().trim().min(3).max(120),
   mediaUrl: z.string().trim().min(1),
   storageKey: z.string().trim().min(1),
   fileSize: z.number().int().positive(),
+});
+
+const createProjectSchema = z.object({
+  title: z.string().trim().min(2).max(120),
+  description: z.string().trim().min(10).max(4000),
+  mediaAssets: z.array(projectMediaSchema).min(1).max(24),
   isPublished: z.boolean().optional(),
 });
 
@@ -35,11 +39,25 @@ export async function POST(request: NextRequest) {
     data: {
       title: parsed.data.title,
       description: parsed.data.description,
-      mediaType: parsed.data.mediaType,
-      mediaUrl: parsed.data.mediaUrl,
-      storageKey: parsed.data.storageKey,
-      fileSize: parsed.data.fileSize,
+      mediaType: parsed.data.mediaAssets[0]?.mediaType ?? "application/octet-stream",
+      mediaUrl: parsed.data.mediaAssets[0]?.mediaUrl ?? "",
+      storageKey: parsed.data.mediaAssets[0]?.storageKey ?? "",
+      fileSize: parsed.data.mediaAssets[0]?.fileSize ?? 0,
       isPublished: parsed.data.isPublished ?? true,
+      mediaAssets: {
+        create: parsed.data.mediaAssets.map((asset, index) => ({
+          mediaType: asset.mediaType,
+          mediaUrl: asset.mediaUrl,
+          storageKey: asset.storageKey,
+          fileSize: asset.fileSize,
+          sortOrder: index,
+        })),
+      },
+    },
+    include: {
+      mediaAssets: {
+        orderBy: { sortOrder: "asc" },
+      },
     },
   });
 

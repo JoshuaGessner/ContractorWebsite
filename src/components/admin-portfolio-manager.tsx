@@ -12,6 +12,16 @@ type ProjectRow = {
   fileSize: number;
   isPublished: boolean;
   createdAt: string;
+  updatedAt: string;
+  mediaAssets: {
+    id: string;
+    mediaType: string;
+    mediaUrl: string;
+    storageKey: string;
+    fileSize: number;
+    sortOrder: number;
+    createdAt: string;
+  }[];
 };
 
 type Props = {
@@ -36,7 +46,7 @@ export function AdminPortfolioManager({ initialProjects }: Props) {
   const [projects, setProjects] = useState(initialProjects);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [file, setFile] = useState<File | null>(null);
+  const [files, setFiles] = useState<File[]>([]);
   const [isPublished, setIsPublished] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -109,18 +119,34 @@ export function AdminPortfolioManager({ initialProjects }: Props) {
     setError(null);
     setMessage(null);
 
-    if (!file) {
-      setError("Please select an image or video file.");
+    if (files.length === 0) {
+      setError("Please select at least one image or video file.");
       return;
     }
 
     setBusy(true);
 
     try {
-      const uploaded = await uploadMedia(file);
+      const uploadedAssets: {
+        mediaType: string;
+        mediaUrl: string;
+        storageKey: string;
+        fileSize: number;
+      }[] = [];
 
-      if (!uploaded.publicUrl) {
-        throw new Error("Uploaded media URL missing. Configure S3_PUBLIC_BASE_URL or use local uploads.");
+      for (const file of files) {
+        const uploaded = await uploadMedia(file);
+
+        if (!uploaded.publicUrl) {
+          throw new Error("Uploaded media URL missing. Configure S3_PUBLIC_BASE_URL or use local uploads.");
+        }
+
+        uploadedAssets.push({
+          mediaType: uploaded.mimeType,
+          mediaUrl: uploaded.publicUrl,
+          storageKey: uploaded.storageKey,
+          fileSize: uploaded.fileSize,
+        });
       }
 
       const createResponse = await fetch("/api/admin/projects", {
@@ -129,10 +155,7 @@ export function AdminPortfolioManager({ initialProjects }: Props) {
         body: JSON.stringify({
           title,
           description,
-          mediaType: uploaded.mimeType,
-          mediaUrl: uploaded.publicUrl,
-          storageKey: uploaded.storageKey,
-          fileSize: uploaded.fileSize,
+          mediaAssets: uploadedAssets,
           isPublished,
         }),
       });
@@ -142,7 +165,7 @@ export function AdminPortfolioManager({ initialProjects }: Props) {
         throw new Error(body.message || "Failed to create project.");
       }
 
-      const payload = (await createResponse.json()) as { project: Omit<ProjectRow, "createdAt"> & { createdAt: string } };
+      const payload = (await createResponse.json()) as { project: ProjectRow };
 
       setProjects((current) => [
         {
@@ -154,9 +177,9 @@ export function AdminPortfolioManager({ initialProjects }: Props) {
 
       setTitle("");
       setDescription("");
-      setFile(null);
+      setFiles([]);
       setIsPublished(true);
-      setMessage("Project media added. It now appears on the public site portfolio.");
+      setMessage("Project created with media files. It now appears on the public site portfolio.");
     } catch (submitError) {
       setError(submitError instanceof Error ? submitError.message : "Unable to add project.");
     } finally {
@@ -229,16 +252,33 @@ export function AdminPortfolioManager({ initialProjects }: Props) {
           </label>
 
           <label className="space-y-1 text-sm text-zinc-300">
-            <span>Media File</span>
+            <span>Project Photos/Videos</span>
             <input
               required
               type="file"
               accept="image/*,video/*"
-              onChange={(event) => setFile(event.target.files?.[0] ?? null)}
+              multiple
+              onChange={(event) => setFiles(Array.from(event.target.files ?? []))}
               className="w-full rounded-md border border-white/20 bg-zinc-900 px-3 py-2 text-zinc-200"
             />
+            <p className="text-xs text-zinc-400">
+              Pick one or more files. You can mix photos and videos in the same project.
+            </p>
           </label>
         </div>
+
+        {files.length > 0 ? (
+          <div className="rounded-md border border-white/10 bg-zinc-950/60 p-3">
+            <p className="text-sm font-medium text-zinc-200">Selected Files ({files.length})</p>
+            <ul className="mt-2 space-y-1 text-xs text-zinc-300">
+              {files.map((file, index) => (
+                <li key={`${file.name}-${index}`}>
+                  {file.name} · {file.type || "unknown"} · {formatBytes(file.size)}
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
 
         <label className="block space-y-1 text-sm text-zinc-300">
           <span>Description</span>
@@ -273,7 +313,7 @@ export function AdminPortfolioManager({ initialProjects }: Props) {
           type="submit"
           className="rounded-md bg-yellow-400 px-4 py-2 font-semibold text-black disabled:opacity-60"
         >
-          {busy ? "Uploading..." : "Add Project Media"}
+          {busy ? "Uploading Files..." : "Create Project"}
         </button>
       </form>
 
@@ -286,14 +326,14 @@ export function AdminPortfolioManager({ initialProjects }: Props) {
           <div className="grid gap-3 md:grid-cols-2">
             {projects.map((project) => (
               <article key={project.id} className="rounded-md border border-white/10 bg-zinc-900/60 p-3">
-                {isImageType(project.mediaType) ? (
+                {project.mediaAssets.length > 0 && isImageType(project.mediaAssets[0].mediaType) ? (
                   <div
                     className="mb-2 h-36 w-full rounded bg-cover bg-center"
-                    style={{ backgroundImage: `url(${project.mediaUrl})` }}
+                    style={{ backgroundImage: `url(${project.mediaAssets[0].mediaUrl})` }}
                   />
-                ) : isVideoType(project.mediaType) ? (
+                ) : project.mediaAssets.length > 0 && isVideoType(project.mediaAssets[0].mediaType) ? (
                   <video controls className="mb-2 h-36 w-full rounded bg-black" preload="metadata">
-                    <source src={project.mediaUrl} type={project.mediaType} />
+                    <source src={project.mediaAssets[0].mediaUrl} type={project.mediaAssets[0].mediaType} />
                   </video>
                 ) : (
                   <div className="mb-2 flex h-36 w-full items-center justify-center rounded bg-zinc-800 text-xs text-zinc-300">
@@ -301,14 +341,36 @@ export function AdminPortfolioManager({ initialProjects }: Props) {
                   </div>
                 )}
 
+                {project.mediaAssets.length > 1 ? (
+                  <div className="mb-2 grid grid-cols-4 gap-1">
+                    {project.mediaAssets.slice(1, 5).map((asset) =>
+                      isImageType(asset.mediaType) ? (
+                        <div
+                          key={asset.id}
+                          className="h-12 rounded bg-cover bg-center"
+                          style={{ backgroundImage: `url(${asset.mediaUrl})` }}
+                        />
+                      ) : (
+                        <div
+                          key={asset.id}
+                          className="flex h-12 items-center justify-center rounded bg-black text-[10px] text-zinc-300"
+                        >
+                          Video
+                        </div>
+                      ),
+                    )}
+                  </div>
+                ) : null}
+
                 <h4 className="font-semibold text-white">{project.title}</h4>
                 <p className="mt-1 line-clamp-3 text-sm text-zinc-300">{project.description}</p>
                 <p className="mt-2 text-xs text-zinc-400">
-                  {project.mediaType} · {formatBytes(project.fileSize)} · {project.isPublished ? "Published" : "Hidden"}
+                  {project.mediaAssets.length} file{project.mediaAssets.length === 1 ? "" : "s"} · {project.isPublished ? "Published" : "Hidden"}
                 </p>
 
                 {(() => {
-                  const projectUrl = toAbsoluteUrl(project.mediaUrl);
+                  const primaryMedia = project.mediaAssets[0]?.mediaUrl ?? project.mediaUrl;
+                  const projectUrl = toAbsoluteUrl(primaryMedia);
                   const shareUrls = socialShareUrls(projectUrl, project.title);
 
                   return (
@@ -350,7 +412,7 @@ export function AdminPortfolioManager({ initialProjects }: Props) {
 
                 <div className="mt-3 flex gap-2">
                   <a
-                    href={project.mediaUrl}
+                    href={project.mediaAssets[0]?.mediaUrl ?? project.mediaUrl}
                     target="_blank"
                     rel="noreferrer"
                     className="rounded border border-yellow-400/40 px-2 py-1 text-xs text-yellow-300"
