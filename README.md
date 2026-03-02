@@ -58,6 +58,12 @@ To update an already deployed server (pull latest + rebuild + restart):
 ./scripts/deploy-docker.sh --update
 ```
 
+Or with the dedicated helper script:
+
+```bash
+./scripts/update-and-restart.sh
+```
+
 Or:
 
 ```bash
@@ -137,6 +143,26 @@ Update current deployment from git + redeploy:
 
 ```bash
 ./scripts/deploy-docker.sh --update
+```
+
+Update + restart using helper script:
+
+```bash
+./scripts/update-and-restart.sh
+```
+
+This script attempts a git update first and automatically falls back to restart/redeploy-only if update mode is not applicable.
+
+Reset admin login credentials:
+
+```bash
+./scripts/reset-admin-login.sh
+```
+
+Or pass values non-interactively:
+
+```bash
+./scripts/reset-admin-login.sh newUsername 'newStrongPasswordHere'
 ```
 
 Change host port by setting `APP_PORT` in `.env.docker` (default is `43871`).
@@ -247,6 +273,8 @@ docker compose exec app npx prisma migrate deploy
 - Dashboard is at `/admin`
 - Single-admin behavior is enforced at the database level
 - Session cookie is `HttpOnly` and uses strict same-site settings
+
+If you lose admin credentials after setup, reset them with `./scripts/reset-admin-login.sh`.
 
 ## API Surface (High Level)
 

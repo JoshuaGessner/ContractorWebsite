@@ -8,6 +8,8 @@
     "start": "next start",
     "deploy:docker": "./scripts/deploy-docker.sh",
     "deploy:update": "./scripts/deploy-docker.sh --update",
+    "admin:reset": "sh ./scripts/reset-admin-login.sh",
+    "server:update-restart": "sh ./scripts/update-and-restart.sh",
     "lint": "eslint",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
