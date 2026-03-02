@@ -73,10 +73,63 @@ type ReviewSettings = {
 
 export function AdminDashboard({ initialEstimates, initialProjects, initialTestimonials, initialReviewSettings, adminUsername }: Props) {
   const [tab, setTab] = useState<"estimates" | "portfolio" | "testimonials">("estimates");
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [passwordStatus, setPasswordStatus] = useState<{ kind: "success" | "error"; message: string } | null>(null);
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
 
   async function onLogout() {
     await fetch("/api/admin/logout", { method: "POST" });
     window.location.href = "/admin/login";
+  }
+
+  async function onChangePassword(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setPasswordStatus(null);
+
+    if (newPassword.length < 8) {
+      setPasswordStatus({ kind: "error", message: "New password must be at least 8 characters." });
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      setPasswordStatus({ kind: "error", message: "New password and confirm password must match." });
+      return;
+    }
+
+    setIsChangingPassword(true);
+
+    try {
+      const response = await fetch("/api/admin/password", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          currentPassword,
+          newPassword,
+          confirmPassword,
+        }),
+      });
+
+      const data = (await response.json().catch(() => ({}))) as { message?: string };
+
+      if (!response.ok) {
+        setPasswordStatus({ kind: "error", message: data.message ?? "Failed to update password." });
+        return;
+      }
+
+      setPasswordStatus({ kind: "success", message: data.message ?? "Password updated. Please sign in again." });
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+      window.location.href = "/admin/login";
+    } catch {
+      setPasswordStatus({ kind: "error", message: "Network error while updating password." });
+    } finally {
+      setIsChangingPassword(false);
+    }
   }
 
   return (
@@ -126,6 +179,57 @@ export function AdminDashboard({ initialEstimates, initialProjects, initialTesti
             Logout
           </button>
         </div>
+
+        <form onSubmit={onChangePassword} className="mt-4 rounded-lg border border-white/10 bg-black/30 p-3">
+          <h2 className="text-sm font-semibold text-white">Change Password</h2>
+          <div className="mt-3 grid gap-2 sm:grid-cols-3">
+            <input
+              type="password"
+              value={currentPassword}
+              onChange={(event) => setCurrentPassword(event.target.value)}
+              placeholder="Current password"
+              autoComplete="current-password"
+              className="rounded-md border border-white/20 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 outline-none focus:border-yellow-400"
+              required
+            />
+            <input
+              type="password"
+              value={newPassword}
+              onChange={(event) => setNewPassword(event.target.value)}
+              placeholder="New password"
+              autoComplete="new-password"
+              className="rounded-md border border-white/20 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 outline-none focus:border-yellow-400"
+              minLength={8}
+              required
+            />
+            <input
+              type="password"
+              value={confirmPassword}
+              onChange={(event) => setConfirmPassword(event.target.value)}
+              placeholder="Confirm new password"
+              autoComplete="new-password"
+              className="rounded-md border border-white/20 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 outline-none focus:border-yellow-400"
+              minLength={8}
+              required
+            />
+          </div>
+
+          <div className="mt-3 flex flex-wrap items-center gap-3">
+            <button
+              type="submit"
+              disabled={isChangingPassword}
+              className="rounded-md bg-yellow-400 px-3 py-2 text-sm font-medium text-black disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {isChangingPassword ? "Updating..." : "Update Password"}
+            </button>
+
+            {passwordStatus ? (
+              <p className={`text-sm ${passwordStatus.kind === "success" ? "text-emerald-300" : "text-red-300"}`}>
+                {passwordStatus.message}
+              </p>
+            ) : null}
+          </div>
+        </form>
       </div>
 
       {tab === "estimates" ? (

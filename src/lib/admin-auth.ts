@@ -10,6 +10,7 @@ const DEV_FALLBACK_SECRET = "dev-only-change-me-auth-secret";
 type SessionPayload = {
   sub: string;
   exp: number;
+  iat: number;
 };
 
 function getAuthSecret() {
@@ -62,9 +63,12 @@ export function verifyPassword(password: string, stored: string) {
 }
 
 export function createSessionToken(userId: string) {
+  const issuedAt = Date.now();
+
   const payload: SessionPayload = {
     sub: userId,
-    exp: Date.now() + SESSION_DAYS * 24 * 60 * 60 * 1000,
+    exp: issuedAt + SESSION_DAYS * 24 * 60 * 60 * 1000,
+    iat: issuedAt,
   };
 
   const encodedPayload = base64UrlEncode(JSON.stringify(payload));
@@ -94,7 +98,13 @@ export function verifySessionToken(token: string) {
   try {
     const payload = JSON.parse(base64UrlDecode(encodedPayload)) as SessionPayload;
 
-    if (!payload.sub || !payload.exp || payload.exp < Date.now()) {
+    if (
+      !payload.sub ||
+      !payload.exp ||
+      !payload.iat ||
+      payload.exp < Date.now() ||
+      payload.iat > Date.now() + 60_000
+    ) {
       return null;
     }
 
@@ -122,10 +132,23 @@ export async function getAuthenticatedAdmin() {
     return null;
   }
 
-  return prisma.adminUser.findUnique({
+  const admin = await prisma.adminUser.findUnique({
     where: { id: payload.sub },
-    select: { id: true, username: true },
+    select: { id: true, username: true, updatedAt: true },
   });
+
+  if (!admin) {
+    return null;
+  }
+
+  if (payload.iat < admin.updatedAt.getTime()) {
+    return null;
+  }
+
+  return {
+    id: admin.id,
+    username: admin.username,
+  };
 }
 
 export async function requireAdminAuth() {
